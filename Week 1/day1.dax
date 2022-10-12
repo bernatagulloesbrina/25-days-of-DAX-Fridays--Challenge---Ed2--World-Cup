@@ -1,0 +1,16 @@
+EVALUATE
+VAR winsByCountry =
+    ADDCOLUMNS(
+        SUMMARIZE( 'Tournaments', 'Tournaments'[Winner] ),
+        "@Wins", CALCULATE( COUNTROWS( 'Tournaments' ) )
+    )
+VAR maxWins = MAXX( winsByCountry, [@Wins] )
+VAR maxWinners =
+    CONCATENATEX(
+        FILTER( winsByCountry, [@Wins] = maxWins ),
+        'Tournaments'[Winner],
+        ", ",
+        'Tournaments'[Winner]
+    )
+RETURN
+    { maxWinners }

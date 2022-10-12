@@ -1,0 +1,11 @@
+EVALUATE
+VAR hostWinners =
+    CALCULATETABLE(
+        VALUES('Tournaments'[Host Country]),
+        'Tournaments'[Host Won] = 1
+    )
+    
+    
+VAR hostWinnersList =
+    CONCATENATEX(hostWinners,'Tournaments'[Host Country],", ",'Tournaments'[Host Country])
+RETURN { hostWinnersList }

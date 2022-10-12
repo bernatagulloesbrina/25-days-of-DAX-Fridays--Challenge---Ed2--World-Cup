@@ -1,0 +1,121 @@
+---------------------------------------------------------
+-- Measure: [Day 1 - Country/s with most tournaments won]
+---------------------------------------------------------
+MEASURE 'Answers'[Day 1 - Country/s with most tournaments won] = 
+    VAR winsByCountry =
+        ADDCOLUMNS(
+            SUMMARIZE( 'Tournaments', 'Tournaments'[Winner] ),
+            "@Wins", CALCULATE( COUNTROWS( 'Tournaments' ) )
+        )
+    VAR maxWins = MAXX( winsByCountry, [@Wins] )
+    VAR maxWinners =
+        CONCATENATEX(
+            FILTER( winsByCountry, [@Wins] = maxWins ),
+            'Tournaments'[Winner],
+            ", ",
+            'Tournaments'[Winner]
+        )
+    RETURN
+        maxWinners
+
+---------------------------------------------
+-- Measure: [Day 2 - Host country/s that won]
+---------------------------------------------
+MEASURE 'Answers'[Day 2 - Host country/s that won] = 
+    VAR hostWinners =
+        CALCULATETABLE(
+            VALUES( 'Tournaments'[Host Country] ),
+            'Tournaments'[Host Won] = 1
+        )
+    VAR hostWinnersList =
+        CONCATENATEX(
+            hostWinners,
+            'Tournaments'[Host Country],
+            ", ",
+            'Tournaments'[Host Country]
+        )
+    RETURN
+        hostWinnersList
+
+--------------------------------------------------------------
+-- Measure: [Day 3 - Longest gap in years between tournaments]
+--------------------------------------------------------------
+MEASURE 'Answers'[Day 3 - Longest gap in years between tournaments] = 
+    VAR yearAndPreviousYear =
+        ADDCOLUMNS(
+            VALUES( 'Tournaments'[Year] ),
+            "@Previous Tournament Year",
+                VAR currentYear =
+                    CALCULATE( SELECTEDVALUE( 'Tournaments'[Year] ) )
+                VAR previous =
+                    CALCULATE(
+                        MAX( 'Tournaments'[Year] ),
+                        'Tournaments'[Year] < currentYear
+                    )
+                RETURN
+                    previous
+        )
+    VAR maxGap =
+        MAXX(
+            yearAndPreviousYear,
+            IF(
+                ISBLANK( 'Tournaments'[Year] )
+                    || ISBLANK( [@Previous Tournament Year] ),
+                BLANK( ),
+                'Tournaments'[Year] - [@Previous Tournament Year]
+            )
+        )
+    RETURN
+        maxGap & " year" & if(maxgap<>1,"s")
+
+--------------------------------------------------------------------------
+-- Measure: [Day 4 - Country(s) with highest number of hosted tournaments]
+--------------------------------------------------------------------------
+MEASURE 'Answers'[Day 4 - Country(s) with highest number of hosted tournaments] = 
+    VAR countriesTimesHost =
+        ADDCOLUMNS(
+            SUMMARIZE( 'Tournaments', 'Tournaments'[Host Country] ),
+            "@Times Host", CALCULATE( COUNTROWS( 'Tournaments' ) )
+        )
+    VAR maxTimesHost = MAXX( countriesTimesHost, [@Times Host] )
+    VAR maxTimesHostCountries =
+        FILTER( countriesTimesHost, [@Times Host] = maxTimesHost )
+    VAR maxTimesHostCountriesList =
+        CONCATENATEX(
+            maxTimesHostCountries,
+            'Tournaments'[Host Country],
+            ", ",
+            'Tournaments'[Host Country]
+        )
+    RETURN
+        maxTimesHostCountriesList
+
+----------------------------------------------------------------
+-- Measure: [Day 5 - Country/s with most second place finnishes]
+----------------------------------------------------------------
+MEASURE 'Answers'[Day 5 - Country/s with most second place finnishes] = 
+    VAR country2ndPlaceFinishes =
+        CALCULATETABLE(
+            ADDCOLUMNS(
+                VALUES( 'Tournament Standings'[Team Name] ),
+                "@2nd Place Finishes",
+                    CALCULATE( COUNTROWS( 'Tournament Standings' ) )
+            ),
+            'Tournament Standings'[Position] = 2
+        )
+    VAR max2ndPlaceFinishes =
+        MAXX( country2ndPlaceFinishes, [@2nd Place Finishes] )
+    VAR max2ndPlaceCountries =
+        FILTER(
+            country2ndPlaceFinishes,
+            [@2nd Place Finishes] = max2ndPlaceFinishes
+        )
+    VAR max2ndPlaceCountryList =
+        CONCATENATEX(
+            max2ndPlaceCountries,
+            'Tournament Standings'[Team Name],
+            ", ",
+            'Tournament Standings'[Team Name]
+        )
+    RETURN
+        max2ndPlaceCountryList

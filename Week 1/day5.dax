@@ -1,0 +1,26 @@
+EVALUATE
+VAR country2ndPlaceFinishes =
+    CALCULATETABLE(
+        ADDCOLUMNS(
+            VALUES( 'Tournament Standings'[Team Name] ),
+            "@2nd Place Finishes",
+                CALCULATE( COUNTROWS( 'Tournament Standings' ) )
+        ),
+        'Tournament Standings'[Position] = 2
+    )
+VAR max2ndPlaceFinishes =
+    MAXX( country2ndPlaceFinishes, [@2nd Place Finishes] )
+VAR max2ndPlaceCountries =
+    FILTER(
+        country2ndPlaceFinishes,
+        [@2nd Place Finishes] = max2ndPlaceFinishes
+    )
+VAR max2ndPlaceCountryList =
+    CONCATENATEX(
+        max2ndPlaceCountries,
+        'Tournament Standings'[Team Name],
+        ", ",
+        'Tournament Standings'[Team Name]
+    )
+RETURN
+    { max2ndPlaceCountryList }

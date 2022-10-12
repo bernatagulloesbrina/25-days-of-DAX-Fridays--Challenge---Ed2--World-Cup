@@ -1,0 +1,18 @@
+EVALUATE
+VAR countriesTimesHost =
+    ADDCOLUMNS(
+        SUMMARIZE( 'Tournaments', 'Tournaments'[Host Country] ),
+        "@Times Host", CALCULATE( COUNTROWS( 'Tournaments' ) )
+    )
+VAR maxTimesHost = MAXX( countriesTimesHost, [@Times Host] )
+VAR maxTimesHostCountries =
+    FILTER( countriesTimesHost, [@Times Host] = maxTimesHost )
+VAR maxTimesHostCountriesList =
+    CONCATENATEX(
+        maxTimesHostCountries,
+        'Tournaments'[Host Country],
+        ", ",
+        'Tournaments'[Host Country]
+    )
+RETURN
+    { maxTimesHostCountriesList }

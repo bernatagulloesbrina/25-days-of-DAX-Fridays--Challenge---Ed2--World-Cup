@@ -1,0 +1,21 @@
+EVALUATE
+VAR yearAndPreviousYear =
+    ADDCOLUMNS(
+        VALUES( 'Tournaments'[Year] ),
+        "@Previous Tournament Year",
+        VAR  currentYear = CALCULATE( SELECTEDVALUE( 'Tournaments'[Year] ) )
+        VAR  previous = CALCULATE( MAX( 'Tournaments'[Year] ), 'Tournaments'[Year] < currentYear )
+        RETURN  previous
+    )
+
+VAR maxGap =
+    MAXX(
+        yearAndPreviousYear,
+        IF(
+            ISBLANK( 'Tournaments'[Year] ) || ISBLANK([@Previous Tournament Year]),
+            BLANK(),
+            'Tournaments'[Year]-[@Previous Tournament Year]
+        )
+    )
+
+RETURN { maxGap }
