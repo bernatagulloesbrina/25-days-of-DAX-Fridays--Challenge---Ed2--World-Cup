@@ -1,0 +1,21 @@
+EVALUATE
+VAR wordCupsPerTeam =
+    ADDCOLUMNS(
+        VALUES( 'Qualified Teams'[Team Name] ),
+        "@World Cups", CALCULATE( COUNTROWS( 'Qualified Teams' ) )
+    )
+VAR maxWorldCupsNumber = MAXX( wordCupsPerTeam, [@World Cups] )
+VAR maxWorldCupsTeams =
+    FILTER(
+        wordCupsPerTeam,
+        [@World Cups] = maxWorldCupsNumber
+    )
+VAR maxWorldCupsTeamList =
+    CONCATENATEX(
+        maxWorldCupsTeams,
+        'Qualified Teams'[Team Name],
+        ", ",
+        'Qualified Teams'[Team Name]
+    )
+RETURN
+   { maxWorldCupsTeamList }

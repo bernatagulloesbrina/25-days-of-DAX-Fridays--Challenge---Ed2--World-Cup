@@ -1,0 +1,190 @@
+----------------------------------------------------------------
+-- Measure: [Day 06 - Country/s with most world cup appearances]
+----------------------------------------------------------------
+MEASURE 'Answers'[Day 06 - Country/s with most world cup appearances] = 
+    VAR wordCupsPerTeam =
+        ADDCOLUMNS(
+            VALUES( 'Qualified Teams'[Team Name] ),
+            "@World Cups", CALCULATE( COUNTROWS( 'Qualified Teams' ) )
+        )
+    VAR maxWorldCupsNumber = MAXX( wordCupsPerTeam, [@World Cups] )
+    VAR maxWorldCupsTeams =
+        FILTER(
+            wordCupsPerTeam,
+            [@World Cups] = maxWorldCupsNumber
+        )
+    VAR maxWorldCupsTeamList =
+        CONCATENATEX(
+            maxWorldCupsTeams,
+            'Qualified Teams'[Team Name],
+            ", ",
+            'Qualified Teams'[Team Name]
+        )
+    RETURN
+       maxWorldCupsTeamList
+
+------------------------------------------------------------------
+-- Measure: [Day 07 - Country/s with most finishes in the top two]
+------------------------------------------------------------------
+MEASURE 'Answers'[Day 07 - Country/s with most finishes in the top two] = 
+    VAR contriesFinalCount =
+        CALCULATETABLE(
+            ADDCOLUMNS(
+                VALUES( 'Tournament Standings'[Team Name] ),
+                "@Finals", CALCULATE( COUNTROWS( 'Tournament Standings' ) )
+            ),
+            'Tournament Standings'[Position] IN { 1, 2 }
+        )
+    VAR maxFinalCount = MAXX( contriesFinalCount, [@Finals] )
+    VAR countriesMostFinals =
+        FILTER( contriesFinalCount, [@Finals] = maxFinalCount )
+    VAR countriesMostFinalsList =
+        CONCATENATEX(
+            countriesMostFinals,
+            'Tournament Standings'[Team Name],
+            ", ",
+            'Tournament Standings'[Team Name]
+        )
+    RETURN
+        countriesMostFinalsList
+
+----------------------------------------------------------
+-- Measure: [Day 08 - Longest gap in years between titles]
+----------------------------------------------------------
+MEASURE 'Answers'[Day 08 - Longest gap in years between titles] = 
+    VAR winners =
+        SELECTCOLUMNS(
+            FILTER(
+                'Tournament Standings',
+                'Tournament Standings'[Position] = 1
+            ),
+            "Team Name", 'Tournament Standings'[Team Name],
+            "Year",
+                CONVERT(
+                    LEFT( 'Tournament Standings'[Tournament Name], 4 ),
+                    INTEGER
+                )
+        )
+    VAR winnersPreviousWin =
+        GENERATE(
+            winners,
+            VAR currentTeam = [Team Name]
+            VAR currentYear = [Year]
+            VAR previousWins =
+                FILTER(
+                    winners,
+                    [Team Name] = currentTeam && [Year] < currentYear
+                )
+            VAR previousWinYear = MAXX( previousWins, [Year] )
+            VAR gap =
+                IF(
+                    ISBLANK( previousWinYear ),
+                    BLANK( ),
+                    currentYear - previousWinYear
+                )
+            RETURN
+                ROW( "@Previous Win", previousWinYear, "@Gap", gap )
+        )
+    VAR maxGap = MAXX( winnersPreviousWin, [@Gap] )
+    RETURN
+        maxGap & " years"
+
+------------------------------------------------------------------------
+-- Measure: [Day 09 - Country/s with most consecutive championship wins]
+------------------------------------------------------------------------
+MEASURE 'Answers'[Day 09 - Country/s with most consecutive championship wins] = 
+    VAR wins =
+        SELECTCOLUMNS(
+            'Tournaments',
+            "Year", 'Tournaments'[Year],
+            "Winner", 'Tournaments'[Winner]
+        )
+    VAR winsPrev =
+        GENERATE(
+            wins,
+            VAR currentCountry = [Winner]
+            VAR currentYear = [Year]
+            VAR PreviousWinByAnotherCountry =
+                MAXX(
+                    FILTER(
+                        wins,
+                        [Winner] <> currentCountry && [Year] < currentYear
+                    ),
+                    [Year]
+                )
+            RETURN
+                ROW(
+                    "@Previous Win by Another Country", PreviousWinByAnotherCountry
+                )
+        )
+    VAR winsConsecutive =
+        GENERATE(
+            winsPrev,
+            VAR prevWinOtherCountry = [@Previous Win by Another Country]
+            VAR currentYear = [Year]
+            VAR consecutiveWins =
+                FILTER(
+                    winsPrev,
+                    [Year] > prevWinOtherCountry && [Year] <= currentYear
+                )
+            VAR consecutiveWinsCount = COUNTROWS( consecutiveWins )
+            RETURN
+                ROW( "@Consecutive Wins", consecutiveWinsCount )
+        )
+    VAR maxConsecutiveWins =
+        MAXX( winsConsecutive, [@Consecutive Wins] )
+    VAR countriesMaxConsecutive =
+        FILTER(
+            winsConsecutive,
+            [@Consecutive Wins] = maxConsecutiveWins
+        )
+    VAR countriesMaxConsecutiveList =
+        CONCATENATEX(
+            countriesMaxConsecutive,
+            [Winner],
+            ", ",
+            [Winner]
+        )
+    RETURN
+        countriesMaxConsecutiveList
+
+-----------------------------------------------------------------------
+-- Measure: [Day 10 - Country/s with most finals played but never lost]
+-----------------------------------------------------------------------
+MEASURE 'Answers'[Day 10 - Country/s with most finals played but never lost] = 
+    VAR FinalLosers =
+        DISTINCT(
+            SELECTCOLUMNS(
+                FILTER(
+                    'Tournament Standings',
+                    ( 'Tournament Standings'[Tournament Id] <> "WC-1950"
+                        && 'Tournament Standings'[Position] IN { 2 } )
+                    ||    
+                      ( 'Tournament Standings'[Tournament Id] = "WC-1950"
+                        && 'Tournament Standings'[Position] IN { 2,3,4 } ) 
+                ),
+                "Team Name", 'Tournament Standings'[Team Name]
+            )
+        )
+        
+    VAR onlyFinalWinners =
+        CALCULATETABLE(
+            ADDCOLUMNS(
+                VALUES( 'Tournament Standings'[Team Name] ),
+                "@Wins", CALCULATE( COUNTROWS( 'Tournament Standings' ) )
+            ),
+            NOT 'Tournament Standings'[Team Name] IN FinalLosers,
+            'Tournament Standings'[Position] = 1
+        )
+        
+    VAR maxFinalWins =
+        MAXX(onlyFinalWinners,[@Wins])
+        
+    VAR maxFinalWinsTeams =
+        FILTER(onlyFinalWinners,[@Wins] = maxFinalWins)
+        
+    VAR maxFinalWinsTeamList =
+        CONCATENATEX(maxFinalWinsTeams,'Tournament Standings'[Team Name],", ",'Tournament Standings'[Team Name])
+        
+    RETURN
+        maxFinalWinsTeamList

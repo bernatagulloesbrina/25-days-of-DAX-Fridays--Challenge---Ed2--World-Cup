@@ -1,0 +1,21 @@
+EVALUATE
+VAR contriesFinalCount =
+    CALCULATETABLE(
+        ADDCOLUMNS(
+            VALUES( 'Tournament Standings'[Team Name] ),
+            "@Finals", CALCULATE( COUNTROWS( 'Tournament Standings' ) )
+        ),
+        'Tournament Standings'[Position] IN { 1, 2 }
+    )
+VAR maxFinalCount = MAXX( contriesFinalCount, [@Finals] )
+VAR countriesMostFinals =
+    FILTER( contriesFinalCount, [@Finals] = maxFinalCount )
+VAR countriesMostFinalsList =
+    CONCATENATEX(
+        countriesMostFinals,
+        'Tournament Standings'[Team Name],
+        ", ",
+        'Tournament Standings'[Team Name]
+    )
+RETURN
+    { countriesMostFinalsList }

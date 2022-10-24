@@ -1,0 +1,55 @@
+EVALUATE
+VAR wins =
+    SELECTCOLUMNS(
+        'Tournaments',
+        "Year", 'Tournaments'[Year],
+        "Winner", 'Tournaments'[Winner]
+    )
+VAR winsPrev =
+    GENERATE(
+        wins,
+        VAR currentCountry = [Winner]
+        VAR currentYear = [Year]
+        VAR PreviousWinByAnotherCountry =
+            MAXX(
+                FILTER(
+                    wins,
+                    [Winner] <> currentCountry && [Year] < currentYear
+                ),
+                [Year]
+            )
+        RETURN
+            ROW(
+                "@Previous Win by Another Country", PreviousWinByAnotherCountry
+            )
+    )
+VAR winsConsecutive =
+    GENERATE(
+        winsPrev,
+        VAR prevWinOtherCountry = [@Previous Win by Another Country]
+        VAR currentYear = [Year]
+        VAR consecutiveWins =
+            FILTER(
+                winsPrev,
+                [Year] > prevWinOtherCountry && [Year] <= currentYear
+            )
+        VAR consecutiveWinsCount = COUNTROWS( consecutiveWins )
+        RETURN
+            ROW( "@Consecutive Wins", consecutiveWinsCount )
+    )
+VAR maxConsecutiveWins =
+    MAXX( winsConsecutive, [@Consecutive Wins] )
+VAR countriesMaxConsecutive =
+    FILTER(
+        winsConsecutive,
+        [@Consecutive Wins] = maxConsecutiveWins
+    )
+VAR countriesMaxConsecutiveList =
+    CONCATENATEX(
+        countriesMaxConsecutive,
+        [Winner],
+        ", ",
+        [Winner]
+    )
+RETURN
+    { countriesMaxConsecutiveList }

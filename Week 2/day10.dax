@@ -1,0 +1,37 @@
+EVALUATE
+VAR FinalLosers =
+    DISTINCT(
+        SELECTCOLUMNS(
+            FILTER(
+                'Tournament Standings',
+                ( 'Tournament Standings'[Tournament Id] <> "WC-1950"
+                    && 'Tournament Standings'[Position] IN { 2 } )
+                ||    
+                  ( 'Tournament Standings'[Tournament Id] = "WC-1950"
+                    && 'Tournament Standings'[Position] IN { 2,3,4 } ) 
+            ),
+            "Team Name", 'Tournament Standings'[Team Name]
+        )
+    )
+    
+VAR onlyFinalWinners =
+    CALCULATETABLE(
+        ADDCOLUMNS(
+            VALUES( 'Tournament Standings'[Team Name] ),
+            "@Wins", CALCULATE( COUNTROWS( 'Tournament Standings' ) )
+        ),
+        NOT 'Tournament Standings'[Team Name] IN FinalLosers,
+        'Tournament Standings'[Position] = 1
+    )
+    
+VAR maxFinalWins =
+    MAXX(onlyFinalWinners,[@Wins])
+    
+VAR maxFinalWinsTeams =
+    FILTER(onlyFinalWinners,[@Wins] = maxFinalWins)
+    
+VAR maxFinalWinsTeamList =
+    CONCATENATEX(maxFinalWinsTeams,'Tournament Standings'[Team Name],", ",'Tournament Standings'[Team Name])
+    
+RETURN
+    {maxFinalWinsTeamList}

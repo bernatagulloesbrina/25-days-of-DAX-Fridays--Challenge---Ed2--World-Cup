@@ -1,0 +1,34 @@
+EVALUATE
+VAR winners =
+    SELECTCOLUMNS(
+        FILTER(
+            'Tournament Standings',
+            'Tournament Standings'[Position] = 1
+        ),
+        "Team Name", 'Tournament Standings'[Team Name],
+        "Year",
+            CONVERT(
+                LEFT( 'Tournament Standings'[Tournament Name], 4 ),
+                INTEGER
+            )
+    )
+    
+VAR winnersPreviousWin =
+    GENERATE(
+        winners,
+        
+        VAR currentTeam = [Team Name]
+        VAR currentYear = [Year]
+        VAR previousWins = FILTER(winners,[Team Name] = currentTeam && [Year]< currentYear)
+        VAR previousWinYear = MAXX(previousWins,[Year])
+        
+        VAR gap = IF( ISBLANK( previouswinyear ), BLANK(), currentYear - previousWinYear )
+        
+        RETURN ROW( "@Previous Win", previousWinYear, "@Gap", gap )
+    )
+
+VAR maxGap =
+    MAXX(winnersPreviousWin,[@Gap])
+    
+RETURN
+    { maxGap & " years" }
