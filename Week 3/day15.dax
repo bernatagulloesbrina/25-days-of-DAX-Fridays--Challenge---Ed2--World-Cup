@@ -1,0 +1,49 @@
+EVALUATE
+VAR playerLastGameAsCaptain =
+    GENERATE(
+        SELECTCOLUMNS(
+            'Players',
+            "Given Name", 'Players'[Given Name],
+            "Family Name", 'Players'[Family Name],
+            "Birth Date", 'Players'[Birth Date]
+        ),
+        VAR lastGameAsCaptain =
+            MAXX(
+               FILTER(
+                   RELATEDTABLE( 'Players Appearences' ),
+                   'Players Appearences'[Captain] = 1
+               ),
+                'Players Appearences'[Match Date]
+            )
+        VAR age =
+            IF(
+                ISBLANK( [Birth Date] ) || ISBLANK( lastGameAsCaptain ),
+                BLANK( ),
+                CONVERT(
+                    lastGameAsCaptain - CONVERT( [Birth Date], DATETIME ),
+                    INTEGER
+                )
+            )
+        VAR ageYears = INT( DIVIDE( age, 365 ) )
+        VAR ageMonths = INT( DIVIDE( age - ageYears * 365, 30 ) )
+        VAR ageDays = age - ageYears * 365 - ageMonths * 30
+        RETURN
+            ROW(
+                "@First Final", lastGameAsCaptain,
+                "@Age in Days", age,
+                "@Years", ageYears,
+                "@Months", ageMonths,
+                "@Days", ageDays
+            )
+    )
+VAR oldestPlayerAsCaptain =
+    TOPN(
+        1,
+        FILTER( playerLastGameAsCaptain, NOT ISBLANK( [@Age in Days] ) ),
+        [@Age in Days], DESC
+    )    
+VAR oldestPlayerAsCaptainList =
+    CONCATENATEX(oldestPlayerAsCaptain,[Given Name] & " " & [Family Name],", ",[Given Name] & " " & [Family Name],ASC)
+
+RETURN
+    {oldestPlayerAsCaptainList}

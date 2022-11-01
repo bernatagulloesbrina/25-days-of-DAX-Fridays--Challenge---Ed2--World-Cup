@@ -1,0 +1,23 @@
+EVALUATE
+VAR matchesPerPayer =
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'Players Appearences',
+            'Players Appearences'[Family Name],
+            'Players Appearences'[Given Name],
+            'Players Appearences'[Player Id]
+        ),
+        "@Matches", CALCULATE( COUNTROWS( 'Players Appearences' ) )
+    )
+VAR topPlayers = TOPN( 1, matchesPerPayer, [@Matches], DESC )
+VAR topPlayersList =
+    CONCATENATEX(
+        topPlayers,
+        'Players Appearences'[Given Name] & " "
+            & 'Players Appearences'[Family Name],
+        ", ",
+        'Players Appearences'[Given Name] & " "
+            & 'Players Appearences'[Family Name]
+    )
+RETURN
+   { topPlayersList }

@@ -1,0 +1,9 @@
+EVALUATE
+{
+    CONCATENATEX(
+        TOPN( 1, 'Players', 'Players'[Count Tournaments] ),
+        'Players'[Given Name] & " " & 'Players'[Family Name],
+        ", ",
+        'Players'[Given Name] & " " & 'Players'[Family Name]
+    )
+}

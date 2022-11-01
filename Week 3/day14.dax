@@ -1,0 +1,49 @@
+EVALUATE
+VAR playersFirstFinal =
+    GENERATE(
+        SELECTCOLUMNS(
+            'Players',
+            "Given Name", 'Players'[Given Name],
+            "Family Name", 'Players'[Family Name],
+            "Birth Date", 'Players'[Birth Date]
+        ),
+        VAR firstFinal =
+            MINX(
+                CALCULATETABLE(
+                    RELATEDTABLE( 'Players Appearences' ),
+                    'Players Appearences'[Stage Name] IN { "final" }
+                ),
+                'Players Appearences'[Match Date]
+            )
+        VAR age =
+            IF(
+                ISBLANK( [Birth Date] ) || ISBLANK( firstFinal ),
+                BLANK( ),
+                CONVERT(
+                    firstFinal - CONVERT( [Birth Date], DATETIME ),
+                    INTEGER
+                )
+            )
+        VAR ageYears = INT( DIVIDE( age, 365 ) )
+        VAR ageMonths = INT( DIVIDE( age - ageYears * 365, 30 ) )
+        VAR ageDays = age - ageYears * 365 - ageMonths * 30
+        RETURN
+            ROW(
+                "@First Final", firstFinal,
+                "@Age in Days", age,
+                "@Years", ageYears,
+                "@Months", ageMonths,
+                "@Days", ageDays
+            )
+    )
+VAR youngestPlayerInFinal =
+    TOPN(
+        1,
+        FILTER( playersFirstFinal, NOT ISBLANK( [@Age in Days] ) ),
+        [@Age in Days], ASC
+    )    
+VAR youngestPlayerInFinalList =
+    CONCATENATEX(youngestPlayerInFinal,[Given Name] & " " & [Family Name],", ",[Given Name] & " " & [Family Name],ASC)
+
+RETURN
+    {youngestPlayerInFinalList}

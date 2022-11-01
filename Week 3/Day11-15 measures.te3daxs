@@ -1,0 +1,170 @@
+-----------------------------------------------------------
+-- Measure: [Day 11 - Players with most tournaments played]
+-----------------------------------------------------------
+MEASURE 'Answers'[Day 11 - Players with most tournaments played] = 
+    CONCATENATEX(
+        TOPN( 1, 'Players', 'Players'[Count Tournaments] ),
+        'Players'[Given Name] & " " & 'Players'[Family Name],
+        ", ",
+        'Players'[Given Name] & " " & 'Players'[Family Name]
+    )
+
+-------------------------------------------------------
+-- Measure: [Day 12 - Players with most matches played]
+-------------------------------------------------------
+MEASURE 'Answers'[Day 12 - Players with most matches played] = 
+    VAR matchesPerPayer =
+        ADDCOLUMNS(
+            SUMMARIZE(
+                'Players Appearences',
+                'Players Appearences'[Family Name],
+                'Players Appearences'[Given Name],
+                'Players Appearences'[Player Id]
+            ),
+            "@Matches", CALCULATE( COUNTROWS( 'Players Appearences' ) )
+        )
+    VAR topPlayers = TOPN( 1, matchesPerPayer, [@Matches], DESC )
+    VAR topPlayersList =
+        CONCATENATEX(
+            topPlayers,
+            'Players Appearences'[Given Name] & " "
+                & 'Players Appearences'[Family Name],
+            ", ",
+            'Players Appearences'[Given Name] & " "
+                & 'Players Appearences'[Family Name]
+        )
+    RETURN
+        topPlayersList
+
+---------------------------------------------------------------
+-- Measure: [Day 13 - Youngest player/s when they first played]
+---------------------------------------------------------------
+MEASURE 'Answers'[Day 13 - Youngest player/s when they first played] = 
+    VAR matchDateBirthDate =
+        ADDCOLUMNS(
+            SUMMARIZE(
+                'Players Appearences',
+                'Players'[Birth Date],
+                'Players'[Given Name],
+                'Players'[Family Name],
+                'Players Appearences'[Match Date]
+            ),
+            "@Age",
+                'Players Appearences'[Match Date] - 'Players'[Birth Date]
+        )
+    VAR minAge = TOPN( 1, matchDateBirthDate, [@Age], ASC )
+    VAR minAgeList =
+        CONCATENATEX(
+            minAge,
+            'Players'[Given Name] & " " & 'Players'[Family Name],
+            ", ",
+            'Players'[Given Name] & " " & 'Players'[Family Name], ASC
+        )
+    RETURN
+        minAgeList
+
+---------------------------------------------------
+-- Measure: [Day 14 - Youngest player/s on a final]
+---------------------------------------------------
+MEASURE 'Answers'[Day 14 - Youngest player/s on a final] = 
+    VAR playersFirstFinal =
+        GENERATE(
+            SELECTCOLUMNS(
+                'Players',
+                "Given Name", 'Players'[Given Name],
+                "Family Name", 'Players'[Family Name],
+                "Birth Date", 'Players'[Birth Date]
+            ),
+            VAR firstFinal =
+                MINX(
+                    CALCULATETABLE(
+                        RELATEDTABLE( 'Players Appearences' ),
+                        'Players Appearences'[Stage Name] IN { "final" }
+                    ),
+                    'Players Appearences'[Match Date]
+                )
+            VAR age =
+                IF(
+                    ISBLANK( [Birth Date] ) || ISBLANK( firstFinal ),
+                    BLANK( ),
+                    CONVERT(
+                        firstFinal - CONVERT( [Birth Date], DATETIME ),
+                        INTEGER
+                    )
+                )
+            VAR ageYears = INT( DIVIDE( age, 365 ) )
+            VAR ageMonths = INT( DIVIDE( age - ageYears * 365, 30 ) )
+            VAR ageDays = age - ageYears * 365 - ageMonths * 30
+            RETURN
+                ROW(
+                    "@First Final", firstFinal,
+                    "@Age in Days", age,
+                    "@Years", ageYears,
+                    "@Months", ageMonths,
+                    "@Days", ageDays
+                )
+        )
+    VAR youngestPlayerInFinal =
+        TOPN(
+            1,
+            FILTER( playersFirstFinal, NOT ISBLANK( [@Age in Days] ) ),
+            [@Age in Days], ASC
+        )    
+    VAR youngestPlayerInFinalList =
+        CONCATENATEX(youngestPlayerInFinal,[Given Name] & " " & [Family Name],", ",[Given Name] & " " & [Family Name],ASC)
+    
+    RETURN
+        youngestPlayerInFinalList
+
+---------------------------------------
+-- Measure: [Day 15 - Oldest captain/s]
+---------------------------------------
+MEASURE 'Answers'[Day 15 - Oldest captain/s] = 
+    VAR playerLastGameAsCaptain =
+        GENERATE(
+            SELECTCOLUMNS(
+                'Players',
+                "Given Name", 'Players'[Given Name],
+                "Family Name", 'Players'[Family Name],
+                "Birth Date", 'Players'[Birth Date]
+            ),
+            VAR lastGameAsCaptain =
+                MAXX(
+                   FILTER(
+                       RELATEDTABLE( 'Players Appearences' ),
+                       'Players Appearences'[Captain] = 1
+                   ),
+                    'Players Appearences'[Match Date]
+                )
+            VAR age =
+                IF(
+                    ISBLANK( [Birth Date] ) || ISBLANK( lastGameAsCaptain ),
+                    BLANK( ),
+                    CONVERT(
+                        lastGameAsCaptain - CONVERT( [Birth Date], DATETIME ),
+                        INTEGER
+                    )
+                )
+            VAR ageYears = INT( DIVIDE( age, 365 ) )
+            VAR ageMonths = INT( DIVIDE( age - ageYears * 365, 30 ) )
+            VAR ageDays = age - ageYears * 365 - ageMonths * 30
+            RETURN
+                ROW(
+                    "@First Final", lastGameAsCaptain,
+                    "@Age in Days", age,
+                    "@Years", ageYears,
+                    "@Months", ageMonths,
+                    "@Days", ageDays
+                )
+        )
+    VAR oldestPlayerAsCaptain =
+        TOPN(
+            1,
+            FILTER( playerLastGameAsCaptain, NOT ISBLANK( [@Age in Days] ) ),
+            [@Age in Days], DESC
+        )    
+    VAR oldestPlayerAsCaptainList =
+        CONCATENATEX(oldestPlayerAsCaptain,[Given Name] & " " & [Family Name],", ",[Given Name] & " " & [Family Name],ASC)
+    
+    RETURN
+        oldestPlayerAsCaptainList

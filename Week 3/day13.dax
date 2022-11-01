@@ -1,0 +1,23 @@
+EVALUATE
+VAR matchDateBirthDate =
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'Players Appearences',
+            'Players'[Birth Date],
+            'Players'[Given Name],
+            'Players'[Family Name],
+            'Players Appearences'[Match Date]
+        ),
+        "@Age",
+            'Players Appearences'[Match Date] - 'Players'[Birth Date]
+    )
+VAR minAge = TOPN( 1, matchDateBirthDate, [@Age], ASC )
+VAR minAgeList =
+    CONCATENATEX(
+        minAge,
+        'Players'[Given Name] & " " & 'Players'[Family Name],
+        ", ",
+        'Players'[Given Name] & " " & 'Players'[Family Name], ASC
+    )
+RETURN
+    { minAgeList }
