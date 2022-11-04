@@ -1,0 +1,40 @@
+EVALUATE
+VAR tournamentPlayerCaptain =
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'Players Appearences',
+            'Players Appearences'[Tournament Name],
+            'Players Appearences'[Player Id],
+            'Players Appearences'[Given Name],
+            'Players Appearences'[Family Name]
+        ),
+        "@Is Captain",
+            CALCULATE(
+                MAXX(
+                    'Players Appearences',
+                    'Players Appearences'[Captain]
+                )
+            )
+    )
+VAR onlyCaptains =
+    FILTER( tournamentPlayerCaptain, [@Is Captain] = 1 )
+VAR timesCaptain =
+    GROUPBY(
+        onlyCaptains,
+        'Players Appearences'[Player Id],
+        'Players Appearences'[Given Name],
+        'Players Appearences'[Family Name],
+        "@Times Captain", SUMX( CURRENTGROUP( ), 1 )
+    )
+VAR top1 = TOPN( 1, timesCaptain, [@Times Captain], DESC )
+VAR top1List =
+    CONCATENATEX(
+        top1,
+        'Players Appearences'[Given Name] & " "
+            & 'Players Appearences'[Family Name],
+        ", ",
+        'Players Appearences'[Given Name] & " "
+            & 'Players Appearences'[Family Name], ASC
+    )
+RETURN
+    { top1List }

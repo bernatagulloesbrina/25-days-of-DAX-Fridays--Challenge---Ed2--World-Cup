@@ -1,0 +1,21 @@
+EVALUATE
+VAR playersGoals =
+    ADDCOLUMNS(
+        SUMMARIZE(
+            'Goals',
+            'Goals'[Player Id],
+            'Goals'[Given Name],
+            'Goals'[Family Name]
+        ),
+        "@Goals", CALCULATE( COUNTROWS( 'Goals' ) )
+    )
+VAR topScorers = TOPN( 1, playersGoals, [@Goals], DESC )
+VAR topScorersList =
+    CONCATENATEX(
+        topScorers,
+        'Goals'[Given Name] & " " & 'Goals'[Family Name],
+        ", ",
+        'Goals'[Given Name] & " " & 'Goals'[Family Name], ASC
+    )
+RETURN
+    {topScorersList}

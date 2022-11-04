@@ -1,0 +1,18 @@
+EVALUATE
+VAR topMargin = TOPN(
+    1,
+    SELECTCOLUMNS(
+        'Matches',
+        "Match Name", 'Matches'[Match Name],
+        "@Goal margin",
+        VAR  margin = ABS( 'Matches'[Away Team Score Margin] )
+        RETURN  margin
+    ), [@Goal margin], DESC
+)
+
+
+VAR topMarginList =
+    CONCATENATEX(topMargin,[Match Name],", ",[Match Name],ASC)
+    
+RETURN
+    {topMarginList}

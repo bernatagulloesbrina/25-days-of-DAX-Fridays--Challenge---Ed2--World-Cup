@@ -1,0 +1,23 @@
+EVALUATE
+VAR topGoals =
+    TOPN(
+        1,
+        SELECTCOLUMNS(
+            'Matches',
+            //"Match Name", 'Matches'[Match Name],
+            "@Max Goals",
+                MAXX(
+                    {
+                        'Matches'[Home Team Score]
+                            + 'Matches'[Home Team Score Penalties],
+                        'Matches'[Away Team Score]
+                            + 'Matches'[Away Team Score Penalties]
+                    },
+                    [Value]
+                )
+        ),
+        [@Max Goals], DESC
+    )
+VAR result = MAXX( topGoals, [@Max Goals] )
+RETURN
+    { result & " goal" & IF( result <> 1, "s" ) }

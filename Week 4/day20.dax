@@ -1,0 +1,10 @@
+EVALUATE
+VAR matchGoals =
+    SELECTCOLUMNS('Matches',"@Match Name", 'Matches'[Match Name],"@Total goals",'Matches'[Home Team Score]+'Matches'[Away Team Score])
+VAR mostGoals =
+    TOPN(1,matchGoals,[@Total goals],DESC)
+
+VAR matchList =
+    CONCATENATEX(mostGoals,[@Match Name],", ",[@Match Name])
+RETURN 
+    { matchList }
