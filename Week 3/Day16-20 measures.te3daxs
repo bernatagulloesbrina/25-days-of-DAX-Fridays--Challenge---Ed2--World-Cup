@@ -1,0 +1,131 @@
+-----------------------------------------------------------------
+-- Measure: [Day 16 - Player/s with most tournaments ass captain]
+-----------------------------------------------------------------
+MEASURE 'Answers'[Day 16 - Player/s with most tournaments ass captain] = 
+    VAR tournamentPlayerCaptain =
+        ADDCOLUMNS(
+            SUMMARIZE(
+                'Players Appearences',
+                'Players Appearences'[Tournament Name],
+                'Players Appearences'[Player Id],
+                'Players Appearences'[Given Name],
+                'Players Appearences'[Family Name]
+            ),
+            "@Is Captain",
+                CALCULATE(
+                    MAXX(
+                        'Players Appearences',
+                        'Players Appearences'[Captain]
+                    )
+                )
+        )
+    VAR onlyCaptains =
+        FILTER( tournamentPlayerCaptain, [@Is Captain] = 1 )
+    VAR timesCaptain =
+        GROUPBY(
+            onlyCaptains,
+            'Players Appearences'[Player Id],
+            'Players Appearences'[Given Name],
+            'Players Appearences'[Family Name],
+            "@Times Captain", SUMX( CURRENTGROUP( ), 1 )
+        )
+    VAR top1 = TOPN( 1, timesCaptain, [@Times Captain], DESC )
+    VAR top1List =
+        CONCATENATEX(
+            top1,
+            'Players Appearences'[Given Name] & " "
+                & 'Players Appearences'[Family Name],
+            ", ",
+            'Players Appearences'[Given Name] & " "
+                & 'Players Appearences'[Family Name], ASC
+        )
+    RETURN
+        top1List
+
+------------------------------------------------------
+-- Measure: [Day 17 - Player/s with most goals scored]
+------------------------------------------------------
+MEASURE 'Answers'[Day 17 - Player/s with most goals scored] = 
+    VAR playersGoals =
+        ADDCOLUMNS(
+            SUMMARIZE(
+                'Goals',
+                'Goals'[Player Id],
+                'Goals'[Given Name],
+                'Goals'[Family Name]
+            ),
+            "@Goals", CALCULATE( COUNTROWS( 'Goals' ) )
+        )
+    VAR topScorers = TOPN( 1, playersGoals, [@Goals], DESC )
+    VAR topScorersList =
+        CONCATENATEX(
+            topScorers,
+            'Goals'[Given Name] & " " & 'Goals'[Family Name],
+            ", ",
+            'Goals'[Given Name] & " " & 'Goals'[Family Name], ASC
+        )
+    RETURN
+        topScorersList
+
+-------------------------------------------------------
+-- Measure: [Day 18 - Match/s with biggest goal margin]
+-------------------------------------------------------
+MEASURE 'Answers'[Day 18 - Match/s with biggest goal margin] = 
+    VAR topMargin = TOPN(
+        1,
+        SELECTCOLUMNS(
+            'Matches',
+            "Match Name", 'Matches'[Match Name],
+            "@Goal margin",
+            VAR  margin = ABS( 'Matches'[Away Team Score Margin] )
+            RETURN  margin
+        ), [@Goal margin], DESC
+    )
+    
+    
+    VAR topMarginList =
+        CONCATENATEX(topMargin,[Match Name],", ",[Match Name],ASC)
+        
+    RETURN
+        topMarginList
+
+----------------------------------------------------------------
+-- Measure: [Day 19 - Most goals scored in a match for one team]
+----------------------------------------------------------------
+MEASURE 'Answers'[Day 19 - Most goals scored in a match for one team] = 
+    VAR topGoals =
+        TOPN(
+            1,
+            SELECTCOLUMNS(
+                'Matches',
+                //"Match Name", 'Matches'[Match Name],
+                "@Max Goals",
+                    MAXX(
+                        {
+                            'Matches'[Home Team Score]
+                                + 'Matches'[Home Team Score Penalties],
+                            'Matches'[Away Team Score]
+                                + 'Matches'[Away Team Score Penalties]
+                        },
+                        [Value]
+                    )
+            ),
+            [@Max Goals], DESC
+        )
+    VAR result = MAXX( topGoals, [@Max Goals] )
+    RETURN
+        result & " goal" & IF(result <> 1, "s")
+
+---------------------------------------------------------------------
+-- Measure: [Day 20 - Match/es with most goals scored for both teams]
+---------------------------------------------------------------------
+MEASURE 'Answers'[Day 20 - Match/es with most goals scored for both teams] = 
+    VAR matchGoals =
+        SELECTCOLUMNS('Matches',"@Match Name", 'Matches'[Match Name],"@Total goals",'Matches'[Home Team Score]+'Matches'[Away Team Score])
+    VAR mostGoals =
+        TOPN(1,matchGoals,[@Total goals],DESC)
+    
+    VAR matchList =
+        CONCATENATEX(mostGoals,[@Match Name],", ",[@Match Name])
+    RETURN 
+        matchList
