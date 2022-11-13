@@ -1,0 +1,17 @@
+EVALUATE
+VAR tournamentOwnGoals =
+    ADDCOLUMNS(
+        SUMMARIZE( 'Goals', 'Goals'[Tournament Name] ),
+        "@Own Goals", CALCULATE( SUM( 'Goals'[Own Goal] ) )
+    )
+VAR topOwnGoal =
+    TOPN( 1, tournamentOwnGoals, [@Own Goals], DESC )
+VAR topOwnGoalList =
+    CONCATENATEX(
+        topOwnGoal,
+        'Goals'[Tournament Name],
+        ", ",
+        'Goals'[Tournament Name], ASC
+    )
+RETURN
+    { topOwnGoalList }

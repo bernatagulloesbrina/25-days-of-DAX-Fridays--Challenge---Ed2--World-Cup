@@ -1,0 +1,22 @@
+EVALUATE
+VAR finalResults =
+    CALCULATETABLE(
+        GENERATE(
+            SUMMARIZE(
+                'Matches',
+                'Matches'[Match Id],
+                'Matches'[Match Name],
+                'Matches'[Home Team Score],
+                'Matches'[Away Team Score]
+            ), ROW( "@Goal Difference", ABS( 'Matches'[Home Team Score] - 'Matches'[Away Team Score] ) )
+        ),
+        'Matches'[Stage Name] = "final"
+    )
+VAR topDifference =
+    TOPN(1,finalResults,[@Goal Difference],DESC)
+    
+VAR topDifferenceList =
+    CONCATENATEX(topDifference,'Matches'[Match Name],", ",'Matches'[Match Name])
+    
+RETURN
+    {topDifferenceList}

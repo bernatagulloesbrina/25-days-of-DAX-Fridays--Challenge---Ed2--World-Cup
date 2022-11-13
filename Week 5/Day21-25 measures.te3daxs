@@ -1,0 +1,115 @@
+---------------------------------------------------------
+-- Measure: [Day 21 - Match/es with highest scoring draw]
+---------------------------------------------------------
+MEASURE 'Answers'[Day 21 - Match/es with highest scoring draw] = 
+    VAR matchScore =
+        SUMMARIZE(
+            'Matches',
+            'Matches'[Match Id],
+            'Matches'[Match Name],
+            'Matches'[Home Team Score],
+            'Matches'[Away Team Score]
+        )
+    VAR sameScore =
+        FILTER(
+            matchScore,
+            'Matches'[Home Team Score] = 'Matches'[Away Team Score]
+        )
+    VAR topSameScore =
+        TOPN( 1, sameScore, 'Matches'[Home Team Score], DESC )
+    VAR topSameScoreList =
+        CONCATENATEX(
+            topSameScore,
+            'Matches'[Match Name],
+            ", ",
+            'Matches'[Match Name]
+        )
+    RETURN
+        topSameScoreList
+
+-------------------------------------------------------------------
+-- Measure: [Day 22 - Match/es with biggest goal margin in a final]
+-------------------------------------------------------------------
+MEASURE 'Answers'[Day 22 - Match/es with biggest goal margin in a final] = 
+    VAR finalResults =
+        CALCULATETABLE(
+            GENERATE(
+                SUMMARIZE(
+                    'Matches',
+                    'Matches'[Match Id],
+                    'Matches'[Match Name],
+                    'Matches'[Home Team Score],
+                    'Matches'[Away Team Score]
+                ), ROW( "@Goal Difference", ABS( 'Matches'[Home Team Score] - 'Matches'[Away Team Score] ) )
+            ),
+            'Matches'[Stage Name] = "final"
+        )
+    VAR topDifference =
+        TOPN(1,finalResults,[@Goal Difference],DESC)
+        
+    VAR topDifferenceList =
+        CONCATENATEX(topDifference,'Matches'[Match Name],", ",'Matches'[Match Name])
+        
+    RETURN
+        topDifferenceList
+
+-----------------------------------------------------------
+-- Measure: [Day 23 - Most and least goals in a tournament]
+-----------------------------------------------------------
+MEASURE 'Answers'[Day 23 - Most and least goals in a tournament] = 
+    VAR tournamentGoals =
+        ADDCOLUMNS(
+            SUMMARIZE( 'Matches', 'Matches'[Tournament Id] ),
+            "@total goals",
+                CALCULATE(
+                    SUM( 'Matches'[Home Team Score] )
+                        + SUM( 'Matches'[Away Team Score] )
+                )
+        )
+    VAR maxGoals = MAXX( tournamentGoals, [@total goals] )
+    VAR minGoals = MINX( tournamentGoals, [@total goals] )
+    VAR result = maxGoals & " goals, " & minGoals & " goals"
+    RETURN
+        result
+
+------------------------------------------------------------------
+-- Measure: [Day 24 - Tournament with highest number of own goals]
+------------------------------------------------------------------
+MEASURE 'Answers'[Day 24 - Tournament with highest number of own goals] = 
+    VAR tournamentOwnGoals =
+        ADDCOLUMNS(
+            SUMMARIZE( 'Goals', 'Goals'[Tournament Name] ),
+            "@Own Goals", CALCULATE( SUM( 'Goals'[Own Goal] ) )
+        )
+    VAR topOwnGoal =
+        TOPN( 1, tournamentOwnGoals, [@Own Goals], DESC )
+    VAR topOwnGoalList =
+        CONCATENATEX(
+            topOwnGoal,
+            'Goals'[Tournament Name],
+            ", ",
+            'Goals'[Tournament Name], ASC
+        )
+    RETURN
+        topOwnGoalList
+
+------------------------------------------------------
+-- Measure: [Day 25 - Highest average goals per match]
+------------------------------------------------------
+MEASURE 'Answers'[Day 25 - Highest average goals per match] = 
+    VAR tournamentAvgGoals =
+        ADDCOLUMNS(
+            SUMMARIZE( 'Matches', 'Matches'[Tournament Id] ),
+            "@Avg Goals",
+                CALCULATE(
+                    AVERAGEX(
+                        'Matches',
+                        'Matches'[Home Team Score] + 'Matches'[Away Team Score]
+                    )
+                )
+        )
+    VAR topAvgGoals =
+        ROUND( MAXX( tournamentAvgGoals, [@Avg Goals] ), 2 )
+            & " goals"
+    RETURN
+        topAvgGoals

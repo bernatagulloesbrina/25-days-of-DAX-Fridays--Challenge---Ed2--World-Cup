@@ -1,0 +1,15 @@
+EVALUATE
+VAR tournamentGoals =
+    ADDCOLUMNS(
+        SUMMARIZE( 'Matches', 'Matches'[Tournament Id] ),
+        "@total goals",
+            CALCULATE(
+                SUM( 'Matches'[Home Team Score] )
+                    + SUM( 'Matches'[Away Team Score] )
+            )
+    )
+VAR maxGoals = MAXX( tournamentGoals, [@total goals] )
+VAR minGoals = MINX( tournamentGoals, [@total goals] )
+VAR result = maxGoals & " goals, " & minGoals & " goals"
+RETURN
+    { result }

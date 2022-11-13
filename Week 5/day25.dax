@@ -1,0 +1,17 @@
+EVALUATE
+VAR tournamentAvgGoals =
+    ADDCOLUMNS(
+        SUMMARIZE( 'Matches', 'Matches'[Tournament Id] ),
+        "@Avg Goals",
+            CALCULATE(
+                AVERAGEX(
+                    'Matches',
+                    'Matches'[Home Team Score] + 'Matches'[Away Team Score]
+                )
+            )
+    )
+VAR topAvgGoals =
+    ROUND( MAXX( tournamentAvgGoals, [@Avg Goals] ), 2 )
+        & " goals"
+RETURN
+    { topAvgGoals }
